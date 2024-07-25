@@ -57,8 +57,10 @@ namespace MarketingCodingAssignment.Services
                 Runtime = int.TryParse(x.Runtime, out int parsedRuntime) ? parsedRuntime : 0,
                 Tagline = x.Tagline,
                 Revenue = long.TryParse(x.Revenue, out long parsedRevenue) ? parsedRevenue : 0,
+                ReleaseDate = DateTime.TryParse(x.ReleaseDate, out DateTime parsedDate) ? parsedDate : (DateTime?)null,//mapping release date to FilmLuceneRecord object from csv films object 
                 VoteAverage = double.TryParse(x.VoteAverage, out double parsedVoteAverage) ? parsedVoteAverage : 0
             }).ToList();
+
 
             // Write the records to the lucene index
             PopulateIndex(luceneFilms);
@@ -79,10 +81,10 @@ namespace MarketingCodingAssignment.Services
             // Create an index writer
             IndexWriterConfig indexConfig = new(AppLuceneVersion, analyzer);
             using IndexWriter writer = new(dir, indexConfig);
-
             //Add to the index
             foreach (var film in films)
             {
+                
                 Document doc = new()
                 {
                     new StringField("Id", film.Id, Field.Store.YES),
@@ -91,12 +93,13 @@ namespace MarketingCodingAssignment.Services
                     new Int32Field("Runtime", film.Runtime, Field.Store.YES),
                     new TextField("Tagline", film.Tagline, Field.Store.YES),
                     new Int64Field("Revenue", film.Revenue ?? 0, Field.Store.YES),
+                    new StringField("ReleaseDate", ConvertToIso8601(film.ReleaseDate), Field.Store.YES),//adding release date to document 
                     new DoubleField("VoteAverage", film.VoteAverage ?? 0.0, Field.Store.YES),
                     new TextField("CombinedText", film.Title + " " + film.Tagline + " " + film.Overview, Field.Store.NO)
                 };
+
                 writer.AddDocument(doc);
             }
-
             writer.Flush(triggerMerge: false, applyAllDeletes: false);
             writer.Commit();
 
@@ -136,10 +139,10 @@ namespace MarketingCodingAssignment.Services
             int startIndex = (startPage) * rowsPerPage;
             TopDocs hits = collector.GetTopDocs(startIndex, rowsPerPage);
             ScoreDoc[] scoreDocs = hits.ScoreDocs;
-
             List<FilmLuceneRecord> films = new();
             foreach (ScoreDoc? hit in scoreDocs)
             {
+                
                 Document foundDoc = searcher.Doc(hit.Doc);
                 FilmLuceneRecord film = new()
                 {
@@ -149,9 +152,11 @@ namespace MarketingCodingAssignment.Services
                     Runtime = int.TryParse(foundDoc.Get("Runtime"), out int parsedRuntime) ? parsedRuntime : 0,
                     Tagline = foundDoc.Get("Tagline").ToString(),
                     Revenue = long.TryParse(foundDoc.Get("Revenue"), out long parsedRevenue) ? parsedRevenue : 0,
+                    ReleaseDate = DateTime.TryParse(foundDoc.Get("ReleaseDate"), out DateTime parsedDate) ? parsedDate : (DateTime?)null,
                     VoteAverage =  double.TryParse(foundDoc.Get("VoteAverage"), out double parsedVoteAverage) ? parsedVoteAverage : 0.0,
                     Score = hit.Score
                 };
+               
                 films.Add(film);
             }
 
@@ -184,6 +189,11 @@ namespace MarketingCodingAssignment.Services
             //configured vote average here, upon value available, range = voteAverageMinimum - 10.0 otherwise, range = 0.0 10.0
             Query vaq = NumericRangeQuery.NewDoubleRange("VoteAverage", voteAverageMinimum ?? 0.0, 10.0, true, true);
 
+            //string releaseDateMin = releaseDateMinimum.HasValue ? releaseDateMinimum.Value.ToString("yyyyMMddHHmmss") : "";
+            //string releaseDateMax = releaseDateMaximum.HasValue ? releaseDateMaximum.Value.ToString("yyyyMMddHHmmss") : "";
+
+            //Query dateQuery = new TermRangeQuery("ReleaseDate", releaseDateMin, releaseDateMax, true, true);
+
             // Apply the filters.
             // add vaq to the bq 
             BooleanQuery bq = new()
@@ -191,10 +201,26 @@ namespace MarketingCodingAssignment.Services
                 { pq, Occur.MUST },
                 { rq, Occur.MUST },
                 { vaq, Occur.MUST }
+                //{ dateQuery, Occur.MUST },
             };
 
             return bq;
         }
+
+        //function to keep lucene.net datetime format intact while getting it from csv file and storing into document
+        private string ConvertToIso8601(DateTime? dateTime)
+        {
+            if (dateTime.HasValue)
+            {
+                return dateTime.Value.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                return ""; // or handle null values as needed
+            }
+        }
+
+       
     }
 }
 
