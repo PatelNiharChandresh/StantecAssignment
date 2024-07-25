@@ -18,6 +18,7 @@ namespace MarketingCodingAssignment.Controllers
 
         public IActionResult Index()
         {
+           // _searchEngine.PopulateIndexFromCsv();
             return View();
         }
 
