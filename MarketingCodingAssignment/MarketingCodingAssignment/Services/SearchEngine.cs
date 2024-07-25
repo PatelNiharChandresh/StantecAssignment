@@ -180,14 +180,17 @@ namespace MarketingCodingAssignment.Services
                 }
             }
 
-            Query rq = NumericRangeQuery.NewInt32Range("Runtime", durationMinimum, durationMaximum, true, true);
-            Query vaq = NumericRangeQuery.NewDoubleRange("VoteAverage", 0.0, 10.0, true, true);
+            Query rq = NumericRangeQuery.NewInt32Range("Runtime", durationMinimum ?? 0, durationMaximum ?? 1000, true, true);
+            //configured vote average here, upon value available, range = voteAverageMinimum - 10.0 otherwise, range = 0.0 10.0
+            Query vaq = NumericRangeQuery.NewDoubleRange("VoteAverage", voteAverageMinimum ?? 0.0, 10.0, true, true);
 
             // Apply the filters.
+            // add vaq to the bq 
             BooleanQuery bq = new()
             {
                 { pq, Occur.MUST },
-                { rq, Occur.MUST }
+                { rq, Occur.MUST },
+                { vaq, Occur.MUST }
             };
 
             return bq;
