@@ -93,7 +93,7 @@ namespace MarketingCodingAssignment.Services
                     new Int32Field("Runtime", film.Runtime, Field.Store.YES),
                     new TextField("Tagline", film.Tagline, Field.Store.YES),
                     new Int64Field("Revenue", film.Revenue ?? 0, Field.Store.YES),
-                    new StringField("ReleaseDate", ConvertToIso8601(film.ReleaseDate), Field.Store.YES),//adding release date to document 
+                    new StringField("ReleaseDate", ConvertToIso8601(film.ReleaseDate), Field.Store.YES),//adding release date to document
                     new DoubleField("VoteAverage", film.VoteAverage ?? 0.0, Field.Store.YES),
                     new TextField("CombinedText", film.Title + " " + film.Tagline + " " + film.Overview, Field.Store.NO)
                 };
@@ -119,8 +119,9 @@ namespace MarketingCodingAssignment.Services
             writer.Commit();
             return;
         }
-
-        public SearchResultsViewModel Search(string searchString, int startPage, int rowsPerPage, int? durationMinimum, int? durationMaximum, double? voteAverageMinimum)
+        //add params for date range query
+        public SearchResultsViewModel Search(string searchString, int startPage, int rowsPerPage, int? durationMinimum, int? durationMaximum, double? voteAverageMinimum
+            , DateTime? releaseDateFrom, DateTime? releaseDateTo)
         {
             // Construct a machine-independent path for the index
             string basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
@@ -132,7 +133,7 @@ namespace MarketingCodingAssignment.Services
             int hitsLimit = 1000;
             TopScoreDocCollector collector = TopScoreDocCollector.Create(hitsLimit, true);
 
-            var query = this.GetLuceneQuery(searchString, durationMinimum, durationMaximum, voteAverageMinimum);
+            var query = this.GetLuceneQuery(searchString, durationMinimum, durationMaximum, voteAverageMinimum, releaseDateFrom, releaseDateTo);
 
             searcher.Search(query, collector);
 
@@ -152,7 +153,7 @@ namespace MarketingCodingAssignment.Services
                     Runtime = int.TryParse(foundDoc.Get("Runtime"), out int parsedRuntime) ? parsedRuntime : 0,
                     Tagline = foundDoc.Get("Tagline").ToString(),
                     Revenue = long.TryParse(foundDoc.Get("Revenue"), out long parsedRevenue) ? parsedRevenue : 0,
-                    ReleaseDate = DateTime.TryParse(foundDoc.Get("ReleaseDate"), out DateTime parsedDate) ? parsedDate : (DateTime?)null,
+                    ReleaseDate = DateTime.TryParse(foundDoc.Get("ReleaseDate"), out DateTime parsedDate) ? parsedDate : (DateTime?)null, // add release date 
                     VoteAverage =  double.TryParse(foundDoc.Get("VoteAverage"), out double parsedVoteAverage) ? parsedVoteAverage : 0.0,
                     Score = hit.Score
                 };
@@ -168,7 +169,8 @@ namespace MarketingCodingAssignment.Services
 
             return searchResults;
         }
-        private Query GetLuceneQuery(string searchString, int? durationMinimum, int? durationMaximum, double? voteAverageMinimum)
+        //add params for date range query
+        private Query GetLuceneQuery(string searchString, int? durationMinimum, int? durationMaximum, double? voteAverageMinimum, DateTime? releaseDateFrom, DateTime? releaseDateTo)
         {
             if (string.IsNullOrWhiteSpace(searchString))
             {
@@ -189,10 +191,25 @@ namespace MarketingCodingAssignment.Services
             //configured vote average here, upon value available, range = voteAverageMinimum - 10.0 otherwise, range = 0.0 10.0
             Query vaq = NumericRangeQuery.NewDoubleRange("VoteAverage", voteAverageMinimum ?? 0.0, 10.0, true, true);
 
-            //string releaseDateMin = releaseDateMinimum.HasValue ? releaseDateMinimum.Value.ToString("yyyyMMddHHmmss") : "";
-            //string releaseDateMax = releaseDateMaximum.HasValue ? releaseDateMaximum.Value.ToString("yyyyMMddHHmmss") : "";
+            DateTime defaultFrom = DateTime.MinValue;
+            DateTime defaultTo = DateTime.UtcNow;
 
-            //Query dateQuery = new TermRangeQuery("ReleaseDate", releaseDateMin, releaseDateMax, true, true);
+            //convert datetime values to BytesRef
+            BytesRef defaultFromBR = ConvertToBytesRef(ConvertToIso8601(defaultFrom));
+            BytesRef defaultToBR = ConvertToBytesRef(ConvertToIso8601(defaultTo));
+
+            string releaseDateMin = ConvertToIso8601(releaseDateFrom);
+            string releaseDateMax = ConvertToIso8601(releaseDateTo); ;
+            // Define the field name where dates are indexed
+
+            BytesRef dateFrom = ConvertToBytesRef(releaseDateMin);
+            BytesRef dateTo = ConvertToBytesRef(releaseDateMax);
+
+            Query dateQuery = new TermRangeQuery("ReleaseDate", dateFrom ?? defaultFromBR, dateTo ?? defaultToBR, true, true);
+
+            
+
+            
 
             // Apply the filters.
             // add vaq to the bq 
@@ -200,8 +217,8 @@ namespace MarketingCodingAssignment.Services
             {
                 { pq, Occur.MUST },
                 { rq, Occur.MUST },
-                { vaq, Occur.MUST }
-                //{ dateQuery, Occur.MUST },
+                { vaq, Occur.MUST },
+                { dateQuery, Occur.MUST },
             };
 
             return bq;
@@ -219,8 +236,15 @@ namespace MarketingCodingAssignment.Services
                 return ""; // or handle null values as needed
             }
         }
+        //function to convert string to BytesRef using UTF-8 Encoding: to convert string datetime to bytesref
+        public  BytesRef ConvertToBytesRef(string str)
+        {
+            
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(str);
+            return new BytesRef(bytes);
+        }
 
-       
+
     }
 }
 
