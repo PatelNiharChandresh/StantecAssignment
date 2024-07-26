@@ -33,3 +33,15 @@ This coding test should take 2 hours. For this test, add as many of the basic fe
 - 2023-09-08 Added notes that advanced features are optional due to reduced time expectations. Added notes about what we're looking for.
 - 2023-09-25 Updates to reduce the scope of the assignment and further shorten time requirements.
 - 2024-07-09 Added notes to clarify that assignment github link should be submitted via email.
+
+## Features Implemented: ##
+- Display VotingAverage in the returned search results => The index file already contains token for votingAverage. Using the token, adding display logic to for loop inside displayLogic() in the Index.cshtml file
+  the votingAverage is displayed.
+- Connect VotingAverage(Minimum) to the search query in order to display results with average above the selected value => Passing on the votingAverage from Search() in home controller to Search() in searchengine.cs, further to 
+  GetLuceneQuery(). Created a range query where minimum value for votingAverage can either be user selected value or 0.0 and maximum value set to 10.0.
+- Adding release date to the index and displaying it in the search results => Map the release date field in the PopulateIndexFromCSV() and further map it to the document created to write to index.					
+  Created a function ConvertToIso8601() to store the releaseDate received from CVS to index in a format supported by Lucene. 
+- Filter movies between given given dates based on release date => Added two input fields with type attribute set to date. Then add them to the function updateSrearch to start tracking changes and pass to 
+  home controller search method. ALso add them as parameters DateTime to Search() methods in home controller and searchengine.cs file along with getLucenQuery(). Perform required type conversions on the variables
+  before adding them to the query. 
+
