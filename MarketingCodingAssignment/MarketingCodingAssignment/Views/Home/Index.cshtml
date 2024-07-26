@@ -159,23 +159,21 @@
             // Loop through the results and format for display.
             for (var i = 0; i < resultCount; ++i) {
                 var item = results[i];
-                lines.push("<div class='panel panel-primary'>");
-                lines.push("<div class='panel-heading'><h3 class='panel-title'><a href='https://www.imdb.com/title/" + htmlEncode(item.id) + "'>" + htmlEncode(item.title) + "</a></h3></div>");
+                lines.push("<div class='panel panel-primary' style='padding-top:10px;'>");
+                lines.push("<div class='panel-heading'> <div > <h3 class='panel-title' style='display:inline'><a href='https://www.imdb.com/title/" + htmlEncode(item.id) + "'>" + htmlEncode(item.title) + "</a></h3><span> | " + item.voteAverage + "</span><span style='font-size:150%;color:gold;'>&starf;</span></div>");
                 lines.push("<div class='panel-body'>");
-                if (item.tagline || item.runtime || item.revenue || item.voteAverage) { //Check if tagline/runtime/revenue/voteaverage are available
+                if (item.tagline || item.runtime || item.revenue) { //Check if tagline/runtime/revenue/voteaverage are available
                     lines.push("<div>");
                     if (item.tagline) lines.push("<span class='tagline'><em>" + item.tagline + "</em></span>"); //if tagline exists add tagline
-                    if (item.tagline && (item.runtime || item.revenue || item.voteAverage)) lines.push(" | "); //if tagline is added then check if runtime/revenue/voteaverage are available to add "|"
+                    if (item.tagline && (item.runtime || item.revenue)) lines.push(" | "); //if tagline is added then check if runtime/revenue/voteaverage are available to add "|"
                     if (item.runtime) lines.push("<span> " + item.runtime + " minutes</span>"); //if runtime exists add runtime
-                    if (item.runtime && (item.revenue || item.voteAverage)) lines.push(" | "); //if runtime is added then check if revenue or voteaverage are available to add "|"
+                    if (item.runtime && item.revenue) lines.push(" | "); //if runtime is added then check if revenue or voteaverage are available to add "|"
                     if (item.revenue) lines.push("<span>" + item.revenue.toLocaleString("en-US", { style: "currency", currency: "USD" }) + "</span>"); //if revenue exists add revenue
-                    if (item.revenue && item.voteAverage) lines.push(" | "); //if revenue is added then check if voteaverage are available to add "|"
-                    if (item.voteAverage) lines.push("<span> " + item.voteAverage + "</span>"); //if voteaverage exists add voteaverage
                     lines.push("</div>");
                 }
 
-                if (item.releaseDate) lines.push("<div>Initially released " + new Date(item.releaseDate).toLocaleDateString() + "</div>");
-                if (item.overview) lines.push("<div class='overview'>" + item.overview + "</div>");
+                if (item.releaseDate) lines.push("<div style='font-size: 12px; color: grey; padding-top: 1px;'>Initially released " + new Date(item.releaseDate).toLocaleDateString() + "</div>");
+                if (item.overview) lines.push("<div class='overview' style='padding-top:1px;'>" + item.overview + "</div>");
                 lines.push("</div>");
                 lines.push("</div>");
             }
@@ -214,11 +212,10 @@
     </script>
 
 }
-
 <div class="text-center">
-    <h1 class="display-4">Film Search</h1>
+    <h1 class="display-4">&#127916 Film Search</h1>
 </div>
-<div style="max-width: 50em; margin: 0 auto">
+<div style="max-width: 50em; margin: 0 auto;">
     <div class="autocomplete" style="margin-bottom:10px">
         <div class="input-group">
             <input id="searchtext" type="search" name="searchtext" placeholder="Type something and press the search button" class="form-control" autocomplete="off">
@@ -271,12 +268,13 @@
                 <option value="10.0">10.0</option>
             </select>
         </div>
-        <div>
-            <label for="releaseDateFromFacet">Release Date From:</label>
-            <input type="date" id="releaseDateFromFacet" name="releaseDateFromFacet">
-
-            <label for="releaseDateToFacet">Release Date To:</label>
-            <input type="date" id="releaseDateToFacet" name="releaseDateToFacet">
+        <div style="display:inline-block;">
+            <label for="releaseDateFromFacet">Release Date From</label>
+            <input class="form-control"  style="display: block; width: 150px" type="date" id="releaseDateFromFacet" name="releaseDateFromFacet">
+        </div>
+        <div style="display:inline-block;">
+            <label for="releaseDateToFacet">Release Date To</label>
+            <input class="form-control"  style="display: block; width: 150px" type="date" id="releaseDateToFacet" name="releaseDateToFacet">
         </div>
 
 
@@ -287,7 +285,7 @@
 
 
     <div id="results-count" style="margin-top: 30px">
-        <span>
+        <span style="margin: auto">
             <span><button id='previous-button' class='btn btn-default' title='Previous'><span class='material-symbols-outlined'>arrow_back_ios</span></button></span>
             <span id='showing-records'><em>Showing records 0  to 0 out of 0 </em></span>
             <span><button id='next-button' class='btn btn-default' title='Next'><span class='material-symbols-outlined'>arrow_forward_ios</span></button></span>
@@ -299,3 +297,4 @@
         <div class="spinner-border" role="status"></div>
     </div>
 </div>
+
