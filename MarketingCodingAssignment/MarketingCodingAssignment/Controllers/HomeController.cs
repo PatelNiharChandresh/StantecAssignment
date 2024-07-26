@@ -18,7 +18,7 @@ namespace MarketingCodingAssignment.Controllers
 
         public IActionResult Index()
         {
-           // _searchEngine.PopulateIndexFromCsv();
+           //_searchEngine.PopulateIndexFromCsv();
             return View();
         }
 
@@ -27,7 +27,7 @@ namespace MarketingCodingAssignment.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-
+        //Added releaseDateFrom and releaseDateTo parameters to Search inorder to implement range search based on release date
         [HttpGet]
         public JsonResult Search(string searchString, int start, int rows, int? durationMinimum, int? durationMaximum, double? voteAverageMinimum, DateTime? releaseDateFrom, DateTime? releaseDateTo)
         {
